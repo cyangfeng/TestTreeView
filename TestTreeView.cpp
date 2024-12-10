@@ -41,15 +41,18 @@ TestTreeView::TestTreeView(QWidget *parent)
 			// 添加Reply作为子项
 			if (j == 4)
 			{
-				QStandardItem* replyItem = new QStandardItem(QString("Child Item %1").arg(j));
-				auto childItemInfo = new ItemInfo();
-				childItemInfo->type = Reply;
-				childItemInfo->wsIcon = "icon";
-				childItemInfo->wsAuthor = strAuthor[std::rand() % 5];
-				childItemInfo->wsDateTime = "2014.12.07";
+				for (int k = 0; k < 5; k++)
+				{
+					QStandardItem* replyItem = new QStandardItem(QString("Child Item %1").arg(k));
+					auto childItemInfo = new ItemInfo();
+					childItemInfo->type = Reply;
+					childItemInfo->wsIcon = "icon";
+					childItemInfo->wsAuthor = strAuthor[std::rand() % 5];
+					childItemInfo->wsDateTime = "2014.12.07";
 
-				replyItem->setData(QVariant::fromValue(childItemInfo), Qt::UserRole);
-				childItem->appendRow(replyItem);
+					replyItem->setData(QVariant::fromValue(childItemInfo), Qt::UserRole);
+					childItem->appendRow(replyItem);
+				}
 			}
 		}
 	}

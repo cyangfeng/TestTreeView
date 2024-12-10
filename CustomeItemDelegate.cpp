@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QMouseEvent>
+#include <QMenu>
 
 CustomeItemDelegate::CustomeItemDelegate(QObject* parent)
 {
@@ -54,57 +55,114 @@ bool CustomeItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
 {
 	if (event->type() == QEvent::MouseButtonPress)
 	{
-		auto itemInfo = index.data(Qt::UserRole).value<ItemInfo*>();
-		if (!itemInfo)
-			return false;
-		if (itemInfo->type == Header)
+		// 鼠标左键
+		QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+		if (mouseEvent->button() == Qt::LeftButton)
 		{
-			// 展开或者关闭当前项
-			auto constTreeView = qobject_cast<const QTreeView*>(option.widget);
-			if (constTreeView)
+			auto itemInfo = index.data(Qt::UserRole).value<ItemInfo*>();
+			if (!itemInfo)
+				return false;
+			if (itemInfo->type == Header)
 			{
-				QTreeView* treeView = const_cast<QTreeView*>(constTreeView);
-				if (treeView)
+				// 展开或者关闭当前项
+				auto constTreeView = qobject_cast<const QTreeView*>(option.widget);
+				if (constTreeView)
 				{
-					bool bExpaned = !treeView->isExpanded(index);
-					treeView->setExpanded(index, bExpaned);
-					// 展开/合上所有子项
-					int nCount = index.model()->rowCount(index);
-					for (int i = 0; i < nCount; i++)
+					QTreeView* treeView = const_cast<QTreeView*>(constTreeView);
+					if (treeView)
 					{
-						QModelIndex childIndex = index.model()->index(i, 0, index);
-						treeView->setExpanded(childIndex, bExpaned);
+						bool bExpaned = !treeView->isExpanded(index);
+						treeView->setExpanded(index, bExpaned);
+						// 展开/合上所有子项
+						int nCount = index.model()->rowCount(index);
+						for (int i = 0; i < nCount; i++)
+						{
+							QModelIndex childIndex = index.model()->index(i, 0, index);
+							treeView->setExpanded(childIndex, bExpaned);
+						}
+						treeView->viewport()->update();
 					}
-					treeView->viewport()->update();
+					return true;
 				}
-				return true;
+			}
+			else
+			{
+				// 处理复选框点击事件	
+				QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+				// 判断是否点击在复选框区域
+				auto pos = mouseEvent->pos();
+				if (itemInfo->rcCheckBox.contains(mouseEvent->pos()))
+					//if (getInteractiveRect(option).contains(mouseEvent->pos()))
+				{
+					bool bChecked = false;
+
+					if (itemInfo)
+					{
+						bChecked = itemInfo->bChecked;
+						itemInfo->bChecked = !bChecked;
+					}
+
+					// 更新视图
+					auto treeView = qobject_cast<const QTreeView*>(option.widget);
+					if (treeView)
+					{
+						treeView->viewport()->update();
+					}
+					return true;
+				}
+				else if (itemInfo->rcMenuBtn.contains(mouseEvent->pos()))
+				{
+					// 处理右键按下事件，弹出菜单
+					QMenu menu;
+					QAction* action1 = menu.addAction("Action 1");
+					QAction* action2 = menu.addAction("Action 2");
+					QAction* action3 = menu.addAction("Action 3");
+
+					// 连接菜单项的信号到槽函数
+					connect(action1, &QAction::triggered, [index]() {
+						// 处理 Action 1
+						qDebug() << "Action 1 triggered for index:" << index;
+						});
+					connect(action2, &QAction::triggered, [index]() {
+						// 处理 Action 2
+						qDebug() << "Action 2 triggered for index:" << index;
+						});
+					connect(action3, &QAction::triggered, [index]() {
+						// 处理 Action 3
+						qDebug() << "Action 3 triggered for index:" << index;
+						});
+
+					// 显示菜单
+					menu.exec(mouseEvent->globalPosition().toPoint());
+					return true;
+				}
 			}
 		}
-		else
+		else if (mouseEvent->button() == Qt::RightButton)
 		{
-			// 处理复选框点击事件	
-			QMouseEvent* mouseEvent = static_cast< QMouseEvent*>(event);
-			// 判断是否点击在复选框区域
-			auto pos = mouseEvent->pos();
-			if (itemInfo->rcCheckBox.contains(mouseEvent->pos()))
-			//if (getInteractiveRect(option).contains(mouseEvent->pos()))
-			{
-				bool bChecked = false;
+			// 处理右键按下事件，弹出菜单
+			QMenu menu;
+			QAction* action1 = menu.addAction("Action 1");
+			QAction* action2 = menu.addAction("Action 2");
+			QAction* action3 = menu.addAction("Action 3");
 
-				if (itemInfo)
-				{
-					bChecked = itemInfo->bChecked;
-					itemInfo->bChecked = !bChecked;
-				}
+			// 连接菜单项的信号到槽函数
+			connect(action1, &QAction::triggered, [index]() {
+				// 处理 Action 1
+				qDebug() << "Action 1 triggered for index:" << index;
+				});
+			connect(action2, &QAction::triggered, [index]() {
+				// 处理 Action 2
+				qDebug() << "Action 2 triggered for index:" << index;
+				});
+			connect(action3, &QAction::triggered, [index]() {
+				// 处理 Action 3
+				qDebug() << "Action 3 triggered for index:" << index;
+				});
 
-				// 更新视图
-				auto treeView = qobject_cast<const QTreeView*>(option.widget);
-				if (treeView)
-				{
-					treeView->viewport()->update();
-				}
-				return true;
-			}
+			// 显示菜单
+			menu.exec(mouseEvent->globalPosition().toPoint());
+			return true;
 		}
 	}
 	if (event->type() == QEvent::MouseButtonDblClick)
@@ -213,6 +271,8 @@ void CustomeItemDelegate::drawAnnotItem(QPainter* painter, const QStyleOptionVie
 	rect.setLeft(rect.left() + extraSpacing);
 	rect.setRight(rect.right() - extraSpacing);
 
+	painter->setClipRect(rect);
+
 	//边框色
 	QColor borderColor = QColor(255, 217, 227, 247);
 	// 默认背景颜色
@@ -230,19 +290,24 @@ void CustomeItemDelegate::drawAnnotItem(QPainter* painter, const QStyleOptionVie
 	}
 
 	// 绘制背景
-	painter->setBrush(backgroundColor);
-	painter->setPen(borderColor);
-	painter->drawRoundedRect(rect, 10, 10);
-
 	// 若当前item有子项，下方开口
 	if (index.model()->hasChildren(index))
 	{
-		auto rcBottom = rect;
-		rcBottom.setTop(rect.bottom() - 12);
-		painter->drawRect(rcBottom);
-		painter->setPen(Qt::NoPen);
-		rcBottom.adjust(1, -2, -1, 1);
-		painter->drawRect(rcBottom);
+		// 设置剪切区域
+		painter->setClipRect(rect);
+		auto rcBackground = rect;
+		rcBackground.setBottom(rect.bottom() + 15);
+		painter->setBrush(backgroundColor);
+		painter->setPen(borderColor);
+		painter->drawRoundedRect(rcBackground, 10, 10);
+		// 取消剪切区域
+		painter->setClipping(false);
+	}
+	else
+	{
+		painter->setBrush(backgroundColor);
+		painter->setPen(borderColor);
+		painter->drawRoundedRect(rect, 10, 10);
 	}
 
 	// 计算各个元素的位置
@@ -306,9 +371,11 @@ void CustomeItemDelegate::drawReplyItem(QPainter* painter, const QStyleOptionVie
 	// 计算实际的绘制区域，减去底部的间隔
 	QRect rect = option.rect;
 	int extraSpacing = 3; // 与 sizeHint 中的间隔一致
-	if (!isFirstChild(index))
-		rect.setTop(rect.top() + extraSpacing);
-	rect.setBottom(rect.bottom() - extraSpacing);
+	if (isLastChild(index))
+	{
+		//rect.setTop(rect.top() + extraSpacing);
+		rect.setBottom(rect.bottom() - extraSpacing);
+	}
 	rect.setLeft(rect.left() + extraSpacing);
 	rect.setRight(rect.right() - extraSpacing);
 
@@ -329,28 +396,38 @@ void CustomeItemDelegate::drawReplyItem(QPainter* painter, const QStyleOptionVie
 	}
 
 	// 绘制背景
-	painter->setBrush(backgroundColor);
-	painter->setPen(borderColor);
-	painter->drawRoundedRect(rect, 10, 10);
+	// Annot的最后一个Reply，上开口和Annotation衔接
+	if (isLastChild(index))
+	{
+		// 设置剪切区域
+		painter->setClipRect(rect);
+		auto rcBackground = rect;
+		rcBackground.setTop(rect.top() - 15);
+		painter->setBrush(backgroundColor);
+		painter->setPen(borderColor);
+		painter->drawRoundedRect(rcBackground, 10, 10);
+		// 取消剪切区域
+		painter->setClipping(false);
+	}
+	else
+	{
+		painter->setClipRect(rect);
+		auto rcBackground = rect;
+		rcBackground.adjust(0, -1, 0, 1);
+		painter->setBrush(backgroundColor);
+		painter->setPen(borderColor);
+		painter->drawRect(rect);
+		painter->setClipping(false);
+	}
 
 	// 计算各个元素的位置
 	itemInfo->rcIcon = QRect(rect.left() + 10, rect.top() + 10, 20, 20);
-	itemInfo->rcAuthor = QRect(itemInfo->rcIcon.right() + 10, rect.top() + 10, 100, 20);
+	itemInfo->rcAuthor = QRect(itemInfo->rcIcon.right() + 20, rect.top() + 10, 100, 20);
 	itemInfo->rcMenuBtn = QRect(rect.right() - 30, rect.top() + 10, 20, 20);
-	itemInfo->rcSubject = itemInfo->rcMenuBtn/*QRect(itemInfo->rcAuthor.left(), itemInfo->rcAuthor.bottom() + 10, rect.width() - 20, 20)*/;
+	itemInfo->rcSubject = QRect(itemInfo->rcAuthor.left(), itemInfo->rcAuthor.bottom() + 10, rect.width() - 20, 20);
 	itemInfo->rcDateTime = QRect(rect.right() - 80, itemInfo->rcSubject.bottom() + 10, 80, 20);
 	itemInfo->rcCheckBox = QRect(itemInfo->rcDateTime.left() - 10 - 16, itemInfo->rcDateTime.top() + 2, 16, 16);
 
-	// Annot的首个Reply，上开口和Annotation衔接
-	if (isFirstChild(index))
-	{
-		auto rcBottom = rect;
-		rcBottom.setBottom(rect.top() + 12);
-		painter->drawRect(rcBottom);
-		painter->setPen(Qt::NoPen);
-		rcBottom.adjust(1, -1, -1, 1);
-		painter->drawRect(rcBottom);
-	}
 
 	// 绘制作者，与icon中心对齐
 	painter->setPen(QPen(QColor(0, 0, 0, 255), 1));
