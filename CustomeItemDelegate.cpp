@@ -6,6 +6,7 @@
 #include <QCheckBox>
 #include <QMouseEvent>
 #include <QMenu>
+#include <QDebug>
 
 CustomeItemDelegate::CustomeItemDelegate(QObject* parent)
 {
@@ -133,7 +134,7 @@ bool CustomeItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
 						});
 
 					// 显示菜单
-					menu.exec(mouseEvent->globalPosition().toPoint());
+					menu.exec(mouseEvent->globalPos());
 					return true;
 				}
 			}
@@ -161,7 +162,7 @@ bool CustomeItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
 				});
 
 			// 显示菜单
-			menu.exec(mouseEvent->globalPosition().toPoint());
+			menu.exec(mouseEvent->globalPos());
 			return true;
 		}
 	}
@@ -413,10 +414,10 @@ void CustomeItemDelegate::drawReplyItem(QPainter* painter, const QStyleOptionVie
 	{
 		painter->setClipRect(rect);
 		auto rcBackground = rect;
-		rcBackground.adjust(0, -1, 0, 1);
+		rcBackground.adjust(0, -2, 0, 2);
 		painter->setBrush(backgroundColor);
 		painter->setPen(borderColor);
-		painter->drawRect(rect);
+		painter->drawRect(rcBackground);
 		painter->setClipping(false);
 	}
 
