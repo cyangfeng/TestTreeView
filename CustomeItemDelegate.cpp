@@ -8,6 +8,12 @@
 #include <QMenu>
 #include <QDebug>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define GLOBAL_POS(event) (event->globalPosition().toPoint())
+#else
+#define GLOBAL_POS(event) (event->globalPos())
+#endif
+
 CustomeItemDelegate::CustomeItemDelegate(QObject* parent)
 {
 }
@@ -134,7 +140,7 @@ bool CustomeItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
 						});
 
 					// 显示菜单
-					menu.exec(mouseEvent->globalPos());
+					menu.exec(GLOBAL_POS(mouseEvent));
 					return true;
 				}
 			}
@@ -162,7 +168,7 @@ bool CustomeItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
 				});
 
 			// 显示菜单
-			menu.exec(mouseEvent->globalPos());
+			menu.exec(GLOBAL_POS(mouseEvent));
 			return true;
 		}
 	}
@@ -401,8 +407,8 @@ void CustomeItemDelegate::drawReplyItem(QPainter* painter, const QStyleOptionVie
 	if (isLastChild(index))
 	{
 		// 设置剪切区域
-		painter->setClipRect(rect);
 		auto rcBackground = rect;
+		painter->setClipRect(rcBackground);
 		rcBackground.setTop(rect.top() - 15);
 		painter->setBrush(backgroundColor);
 		painter->setPen(borderColor);
@@ -412,9 +418,9 @@ void CustomeItemDelegate::drawReplyItem(QPainter* painter, const QStyleOptionVie
 	}
 	else
 	{
-		painter->setClipRect(rect);
 		auto rcBackground = rect;
-		rcBackground.adjust(0, -2, 0, 2);
+		painter->setClipRect(rcBackground);
+		rcBackground.adjust(0, -1, 0, 1);
 		painter->setBrush(backgroundColor);
 		painter->setPen(borderColor);
 		painter->drawRect(rcBackground);
